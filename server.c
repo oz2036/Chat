@@ -5,8 +5,16 @@
 #include <arpa/inet.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <pthread.h>
+#include <time.h>
 
 #define BUFF_SIZE 1024
+
+pthread_t threads[5];
+int done[5];
+
+void *thread_main(void *);
+
 
 int main(int argc,char *argv[]){
   int server_socket;
@@ -35,32 +43,40 @@ int main(int argc,char *argv[]){
     exit(1);
   }
   
-  if(-1 == listen(server_socket,5)){
-    printf("listen() error\n");
-    exit(1);
-  }
-
-  while(1){
+    if(-1 == listen(server_socket,5)){
+      printf("listen() error\n");
+      exit(1);
+    }
+    //  printf("thread [%d]\n",threads[0]);
     client_addr_size=sizeof(client_addr);
     client_socket=accept(server_socket,(struct sockaddr*)&client_addr,&client_addr_size);
     if(-1 == client_socket){
       printf("client connecting error\n");
       exit(1);
     }
-
+  while(1){
+    memset(buff_rcv,0,BUFF_SIZE);
     read(client_socket,buff_rcv,BUFF_SIZE);
     char ip[15];
+    memset(ip,0,15);
     sprintf(ip,"%d.%d.%d.%d",
 	    (int)(client_addr.sin_addr.s_addr&0xFF),
 	    (int)((client_addr.sin_addr.s_addr&0xFF00)>>8),
 	    (int)((client_addr.sin_addr.s_addr&0xFF0000)>>16),
-	    (int)((client_addr.sin_addr.s_addr&0xFF000000))>>24);
-    printf("receive[%s]: %s\n",ip, buff_rcv);
+	    (int)((client_addr.sin_addr.s_addr&0xFF000000)>>24));
 
+    printf("receive[%s]\n",ip);
 
-    sprintf(buff_snd,"%d : %s",strlen(buff_rcv),buff_rcv);
+    sprintf(buff_snd,"[%s] %s",ip,buff_rcv);
     write(client_socket,buff_snd,strlen(buff_snd)+1);
-    close(client_socket);
+    sleep(1);
+    //    close(client_socket);
   }
   return 0;
+}
+
+void *thread_main(void *arg){  
+  //  while(1){
+  //  }
+  pthread_exit((void *)0);
 }
